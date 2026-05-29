@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI COO · Business Decision Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f4f0;
+    --surface: #ffffff;
+    --surface2: #f0efe9;
+    --border: rgba(0,0,0,0.09);
+    --border-strong: rgba(0,0,0,0.18);
+    --text: #141412;
+    --text-2: #5a5a54;
+    --text-3: #9a9a90;
+    --accent: #1a472a;
+    --accent-light: #e8f0eb;
+    --accent2: #c8380a;
+    --accent2-light: #fdf0ec;
+    --amber: #b45309;
+    --amber-light: #fef3c7;
+    --blue: #1d4ed8;
+    --blue-light: #eff6ff;
+    --radius: 10px;
+    --radius-lg: 16px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* TOPBAR */
+  .topbar {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 28px; height: 56px;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-mark {
+    width: 28px; height: 28px; border-radius: 7px;
+    background: var(--accent); display: flex; align-items: center; justify-content: center;
+    font-size: 13px; color: #fff; font-weight: 600;
+  }
+  .logo-text { font-size: 15px; font-weight: 600; letter-spacing: -0.02em; }
+  .logo-sub { font-size: 11px; color: var(--text-3); font-weight: 400; margin-left: 6px; }
+  .topbar-right { display: flex; align-items: center; gap: 8px; }
+  .badge-live {
+    display: flex; align-items: center; gap: 5px;
+    background: var(--accent-light); color: var(--accent);
+    font-size: 11px; font-weight: 500; padding: 3px 9px; border-radius: 20px;
+  }
+  .badge-live::before {
+    content: ''; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent); animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .author-tag { font-size: 12px; color: var(--text-3); }
+
+  /* NAV TABS */
+  .nav-tabs {
+    display: flex; gap: 2px; padding: 16px 28px 0;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .tab {
+    padding: 8px 16px; font-size: 13px; font-weight: 500;
+    color: var(--text-2); cursor: pointer; border-radius: var(--radius) var(--radius) 0 0;
+    border: 1px solid transparent; border-bottom: none;
+    position: relative; bottom: -1px; transition: all 0.15s;
+    background: transparent;
+  }
+  .tab:hover { color: var(--text); background: var(--surface2); }
+  .tab.active {
+    color: var(--text); background: var(--bg);
+    border-color: var(--border); border-bottom-color: var(--bg);
+  }
+
+  /* MAIN LAYOUT */
+  .main { max-width: 1200px; margin: 0 auto; padding: 28px; }
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* CARDS */
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 20px;
+    box-shadow: var(--shadow);
+  }
+  .card-title {
+    font-size: 13px; font-weight: 600; color: var(--text-2);
+    text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 16px;
+  }
+
+  /* KPI ROW */
+  .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+  .kpi {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 18px 20px;
+    box-shadow: var(--shadow);
+  }
+  .kpi-label { font-size: 11px; font-weight: 500; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .kpi-value { font-size: 26px; font-weight: 600; letter-spacing: -0.03em; line-height: 1; }
+  .kpi-sub { font-size: 12px; margin-top: 4px; }
+  .kpi-up { color: var(--accent); }
+  .kpi-down { color: var(--accent2); }
+  .kpi-amber { color: var(--amber); }
+
+  /* GRID 2COL */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+  /* PROJECT TABLE */
+  .proj-table { width: 100%; border-collapse: collapse; }
+  .proj-table th {
+    text-align: left; font-size: 11px; font-weight: 600;
+    color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em;
+    padding: 0 12px 10px; border-bottom: 1px solid var(--border);
+  }
+  .proj-table td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .proj-table tr:last-child td { border-bottom: none; }
+  .proj-table tr:hover td { background: var(--surface2); }
+  .health-bar { width: 80px; height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+  .health-fill { height: 100%; border-radius: 3px; transition: width 0.4s; }
+  .status-badge {
+    display: inline-block; font-size: 11px; font-weight: 500;
+    padding: 2px 8px; border-radius: 20px;
+  }
+  .status-critical { background: #fee2e2; color: #991b1b; }
+  .status-warning { background: var(--amber-light); color: var(--amber); }
+  .status-ok { background: var(--accent-light); color: var(--accent); }
+
+  /* RISK ALERTS */
+  .alert-list { display: flex; flex-direction: column; gap: 10px; }
+  .alert-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 12px 14px; border-radius: var(--radius);
+    border: 1px solid;
+  }
+  .alert-critical { background: #fef2f2; border-color: #fecaca; }
+  .alert-warning { background: var(--amber-light); border-color: #fcd34d; }
+  .alert-info { background: var(--blue-light); border-color: #bfdbfe; }
+  .alert-icon { font-size: 16px; margin-top: 1px; }
+  .alert-title { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+  .alert-body { font-size: 12px; color: var(--text-2); line-height: 1.5; }
+  .alert-time { font-size: 11px; color: var(--text-3); margin-top: 4px; }
+
+  /* BUDGET SECTION */
+  .budget-kpi { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+  .budget-row { display: flex; flex-direction: column; gap: 10px; }
+  .budget-item {
+    display: grid; grid-template-columns: 160px 1fr 80px 80px;
+    align-items: center; gap: 12px;
+    padding: 12px 14px; border-radius: var(--radius);
+    background: var(--surface2); font-size: 13px;
+  }
+  .budget-name { font-weight: 500; }
+  .bar-track { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s; }
+  .variance-pos { color: var(--accent); font-weight: 600; font-size: 12px; }
+  .variance-neg { color: var(--accent2); font-weight: 600; font-size: 12px; }
+
+  /* WHAT-IF */
+  .whatif-grid { display: grid; grid-template-columns: 380px 1fr; gap: 20px; }
+  .control-group { margin-bottom: 18px; }
+  .control-label { font-size: 12px; font-weight: 600; color: var(--text-2); margin-bottom: 6px; display: flex; justify-content: space-between; }
+  .control-val { color: var(--accent); font-family: 'DM Mono', monospace; }
+  input[type=range] {
+    width: 100%; accent-color: var(--accent);
+    cursor: pointer; height: 4px;
+  }
+  .select-input {
+    width: 100%; padding: 8px 10px; border: 1px solid var(--border-strong);
+    border-radius: var(--radius); font-size: 13px; font-family: inherit;
+    background: var(--surface); color: var(--text); cursor: pointer;
+    appearance: none;
+  }
+  .result-box {
+    background: var(--accent); color: #fff;
+    border-radius: var(--radius-lg); padding: 20px; margin-top: 16px;
+  }
+  .result-title { font-size: 12px; font-weight: 600; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .result-main { font-size: 28px; font-weight: 600; letter-spacing: -0.03em; margin-bottom: 12px; }
+  .result-items { display: flex; flex-direction: column; gap: 6px; }
+  .result-item { font-size: 12px; opacity: 0.85; display: flex; gap: 6px; }
+  .result-item::before { content: '→'; opacity: 0.6; }
+
+  /* AI CHAT */
+  .chat-wrap { display: grid; grid-template-columns: 240px 1fr; gap: 20px; }
+  .chat-starters { display: flex; flex-direction: column; gap: 8px; }
+  .starter-btn {
+    text-align: left; padding: 10px 12px; border-radius: var(--radius);
+    border: 1px solid var(--border); background: var(--surface);
+    font-size: 12px; color: var(--text-2); cursor: pointer;
+    transition: all 0.15s; line-height: 1.4; font-family: inherit;
+  }
+  .starter-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+  .chat-box { display: flex; flex-direction: column; gap: 12px; }
+  .messages {
+    min-height: 320px; max-height: 420px; overflow-y: auto;
+    background: var(--surface2); border-radius: var(--radius-lg);
+    padding: 16px; display: flex; flex-direction: column; gap: 12px;
+    border: 1px solid var(--border);
+  }
+  .msg { display: flex; flex-direction: column; max-width: 88%; }
+  .msg.user { align-self: flex-end; align-items: flex-end; }
+  .msg.bot { align-self: flex-start; }
+  .msg-bubble {
+    padding: 10px 14px; border-radius: 12px;
+    font-size: 13px; line-height: 1.55;
+  }
+  .user .msg-bubble { background: var(--accent); color: #fff; border-bottom-right-radius: 3px; }
+  .bot .msg-bubble { background: var(--surface); border: 1px solid var(--border); color: var(--text); border-bottom-left-radius: 3px; }
+  .msg-sender { font-size: 11px; color: var(--text-3); margin-bottom: 3px; font-weight: 500; }
+  .chat-input-row { display: flex; gap: 8px; }
+  .chat-input {
+    flex: 1; padding: 10px 14px; border: 1px solid var(--border-strong);
+    border-radius: var(--radius); font-size: 13px; font-family: inherit;
+    background: var(--surface); color: var(--text);
+    outline: none;
+  }
+  .chat-input:focus { border-color: var(--accent); }
+  .btn-send {
+    padding: 10px 18px; background: var(--accent); color: #fff;
+    border: none; border-radius: var(--radius); font-size: 13px;
+    font-weight: 600; cursor: pointer; font-family: inherit;
+    transition: opacity 0.15s;
+  }
+  .btn-send:hover { opacity: 0.88; }
+  .typing { display: flex; gap: 4px; align-items: center; padding: 10px 14px; }
+  .typing span {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--text-3); animation: blink 1.2s infinite;
+  }
+  .typing span:nth-child(2) { animation-delay: 0.2s; }
+  .typing span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes blink { 0%,80%,100%{opacity:0.2} 40%{opacity:1} }
+
+  /* CHART CONTAINER */
+  .chart-wrap { position: relative; height: 220px; }
+
+  /* SECTION HEADER */
+  .section-header { margin-bottom: 20px; }
+  .section-title { font-size: 20px; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 4px; }
+  .section-desc { font-size: 13px; color: var(--text-2); }
+
+  /* FOOTER */
+  .footer {
+    text-align: center; padding: 24px; font-size: 12px; color: var(--text-3);
+    border-top: 1px solid var(--border); margin-top: 40px; background: var(--surface);
+  }
+  .footer a { color: var(--accent); text-decoration: none; }
+
+  /* RESPONSIVE */
+  @media(max-width: 768px) {
+    .kpi-row { grid-template-columns: repeat(2, 1fr); }
+    .grid2, .whatif-grid, .chat-wrap { grid-template-columns: 1fr; }
+    .budget-item { grid-template-columns: 1fr 1fr; }
+    .main { padding: 16px; }
+    .nav-tabs { padding: 12px 16px 0; overflow-x: auto; }
+  }
+
+  /* FADE IN */
+  .section.active { animation: fadeIn 0.25s ease; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-mark">AI</div>
+    <span class="logo-text">AI COO</span>
+    <span class="logo-sub">Business Decision Engine</span>
+  </div>
+  <div class="topbar-right">
+    <span class="badge-live">Live</span>
+    <span class="author-tag">by Marya Noor</span>
+  </div>
+</div>
+
+<div class="nav-tabs">
+  <div class="tab active" onclick="showTab('dashboard')">📊 Dashboard</div>
+  <div class="tab" onclick="showTab('budget')">💰 Budget Tracker</div>
+  <div class="tab" onclick="showTab('whatif')">🔮 What-If Simulator</div>
+  <div class="tab" onclick="showTab('chat')">🤖 AI COO Chat</div>
+</div>
+
+<!-- ═══════════════════ DASHBOARD ═══════════════════ -->
+<div class="main">
+<div id="dashboard" class="section active">
+  <div class="section-header">
+    <div class="section-title">Portfolio Overview</div>
+    <div class="section-desc">Real-time risk intelligence across all active projects · Auto-refresh every 30s</div>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi">
+      <div class="kpi-label">Active Projects</div>
+      <div class="kpi-value">8</div>
+      <div class="kpi-sub kpi-up">↑ 2 added this quarter</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Portfolio Budget</div>
+      <div class="kpi-value">€2.4M</div>
+      <div class="kpi-sub kpi-amber">⚠ 71% consumed</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">At-Risk Projects</div>
+      <div class="kpi-value" style="color:var(--accent2)">3</div>
+      <div class="kpi-sub kpi-down">↑ 1 escalated today</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Avg Health Score</div>
+      <div class="kpi-value">67</div>
+      <div class="kpi-sub kpi-down">↓ 4pts from last week</div>
+    </div>
+  </div>
+
+  <div class="grid2" style="margin-bottom:16px">
+    <div class="card">
+      <div class="card-title">Project Health — All Projects</div>
+      <table class="proj-table">
+        <thead>
+          <tr>
+            <th>Project</th>
+            <th>Health</th>
+            <th>Score</th>
+            <th>Status</th>
+            <th>Budget %</th>
+          </tr>
+        </thead>
+        <tbody id="proj-tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Risk Alerts</div>
+      <div class="alert-list" id="alert-list"></div>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">Budget Burn — 6 Months</div>
+      <div class="chart-wrap"><canvas id="burnChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Project Status Distribution</div>
+      <div class="chart-wrap"><canvas id="statusChart"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ BUDGET ═══════════════════ -->
+<div id="budget" class="section">
+  <div class="section-header">
+    <div class="section-title">Budget Tracker</div>
+    <div class="section-desc">Planned vs actual spend with variance analysis — updated in real time</div>
+  </div>
+
+  <div class="budget-kpi">
+    <div class="kpi">
+      <div class="kpi-label">Total Planned</div>
+      <div class="kpi-value">€2,400K</div>
+      <div class="kpi-sub" style="color:var(--text-3)">FY 2026</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Actual Spend</div>
+      <div class="kpi-value">€1,712K</div>
+      <div class="kpi-sub kpi-amber">71.3% consumed</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Variance</div>
+      <div class="kpi-value" style="color:var(--accent2)">−€88K</div>
+      <div class="kpi-sub kpi-down">Over-budget overall</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-title">Project-level Budget Variance</div>
+    <div class="budget-row" id="budget-rows"></div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">Spend by Category</div>
+      <div class="chart-wrap"><canvas id="catChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Monthly Variance Trend</div>
+      <div class="chart-wrap"><canvas id="varChart"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ WHAT-IF ═══════════════════ -->
+<div id="whatif" class="section">
+  <div class="section-header">
+    <div class="section-title">What-If Scenario Simulator</div>
+    <div class="section-desc">Adjust parameters and instantly see the projected impact on cost, timeline, and risk</div>
+  </div>
+
+  <div class="whatif-grid">
+    <div class="card">
+      <div class="card-title">Scenario Parameters</div>
+
+      <div class="control-group">
+        <div class="control-label">Project <span class="control-val" id="wi-proj-name">Infrastructure A</span></div>
+        <select class="select-input" id="wi-proj" onchange="updateWhatIf()">
+          <option value="infra">Infrastructure A — €420K</option>
+          <option value="digital">Digital Transform — €380K</option>
+          <option value="fin">Finance System — €290K</option>
+          <option value="hr">HR Platform — €210K</option>
+        </select>
+      </div>
+
+      <div class="control-group">
+        <div class="control-label">Team Size Change <span class="control-val" id="wi-team-val">0</span></div>
+        <input type="range" min="-5" max="10" value="0" id="wi-team" oninput="updateWhatIf()">
+      </div>
+
+      <div class="control-group">
+        <div class="control-label">Scope Increase <span class="control-val" id="wi-scope-val">0%</span></div>
+        <input type="range" min="0" max="50" value="0" id="wi-scope" oninput="updateWhatIf()">
+      </div>
+
+      <div class="control-group">
+        <div class="control-label">Timeline Compression <span class="control-val" id="wi-time-val">0 weeks</span></div>
+        <input type="range" min="-8" max="8" value="0" id="wi-time" oninput="updateWhatIf()">
+      </div>
+
+      <div class="control-group">
+        <div class="control-label">Risk Mitigation Budget <span class="control-val" id="wi-risk-val">€0</span></div>
+        <input type="range" min="0" max="50" value="0" step="5" id="wi-risk" oninput="updateWhatIf()">
+      </div>
+    </div>
+
+    <div>
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-title">AI Projection</div>
+        <div class="result-box" id="wi-result">
+          <div class="result-title">Projected Impact</div>
+          <div class="result-main" id="wi-cost-delta">No change</div>
+          <div class="result-items" id="wi-items"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Sensitivity Analysis</div>
+        <div class="chart-wrap"><canvas id="sensitChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ CHAT ═══════════════════ -->
+<div id="chat" class="section">
+  <div class="section-header">
+    <div class="section-title">AI COO Chat</div>
+    <div class="section-desc">Ask your AI Chief Operating Officer anything about your portfolio, risks, or decisions</div>
+  </div>
+
+  <div class="chat-wrap">
+    <div>
+      <div class="card-title" style="margin-bottom:12px">Quick Questions</div>
+      <div class="chat-starters" id="starters"></div>
+    </div>
+
+    <div class="card">
+      <div class="messages" id="messages"></div>
+      <div class="chat-input-row" style="margin-top:12px">
+        <input class="chat-input" id="chat-input" placeholder="Ask your AI COO anything…" onkeydown="if(event.key==='Enter')sendChat()">
+        <button class="btn-send" onclick="sendChat()">Send ↗</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<div class="footer">
+  Built by <a href="https://www.linkedin.com/in/marya-noor-40093a182/" target="_blank">Marya Noor</a> ·
+  <a href="https://github.com/maryanoor66-jpg/AI-COO-Business-Engine" target="_blank">GitHub</a> ·
+  AI COO Business Engine v1.0 · Berlin, Germany
+</div>
+
+<script>
+// ─── DATA ────────────────────────────────────────────────
+const PROJECTS = [
+  { name: 'Infrastructure Upgrade A', health: 38, budget: 420, spent: 398, status: 'critical', dept: 'Ops' },
+  { name: 'Digital Transformation', health: 72, budget: 380, spent: 291, status: 'ok', dept: 'IT' },
+  { name: 'Finance System Migration', health: 55, budget: 290, spent: 248, status: 'warning', dept: 'Finance' },
+  { name: 'HR Platform Rollout', health: 81, budget: 210, spent: 162, status: 'ok', dept: 'HR' },
+  { name: 'Logistics Automation', health: 44, budget: 340, spent: 319, status: 'critical', dept: 'Ops' },
+  { name: 'Customer Portal v2', health: 90, budget: 180, spent: 121, status: 'ok', dept: 'Product' },
+  { name: 'Compliance Framework', health: 63, budget: 260, spent: 198, status: 'warning', dept: 'Legal' },
+  { name: 'Data Warehouse', health: 77, budget: 320, spent: 175, status: 'ok', dept: 'IT' },
+];
+
+const ALERTS = [
+  { type: 'critical', icon: '🚨', title: 'Infrastructure A — budget breach imminent', body: 'Spent €398K of €420K (94.8%). At current burn rate, overrun occurs in 6 days. Recommend immediate spend freeze on non-critical items.', time: '2 min ago' },
+  { type: 'critical', icon: '🚨', title: 'Logistics Automation — 93.8% budget consumed', body: 'Phase 3 delivery still pending. Request emergency PMO review and scope de-prioritisation of automation module 4.', time: '14 min ago' },
+  { type: 'warning', icon: '⚠️', title: 'Finance System — timeline slip detected', body: 'Data migration task overdue by 9 days. Downstream IFRS compliance reporting at risk. Escalate to Finance Director.', time: '1 hr ago' },
+  { type: 'info', icon: '📊', title: 'Portfolio health dropped 4 points this week', body: 'Two projects moved from Warning → Critical. Board reporting due Friday — prepare variance explanation for CFO.', time: '3 hr ago' },
+];
+
+const STARTERS = [
+  'Which projects will overrun budget this quarter?',
+  'What is my biggest risk right now?',
+  'How should I reallocate resources across the portfolio?',
+  'Give me a COO summary I can send to the board',
+  'What would happen if I cut team size on Infrastructure A?',
+  'Which projects are on track for delivery?',
+];
+
+// ─── KNOWLEDGE BASE FOR AI CHAT ──────────────────────────
+const KB = {
+  budget: `Portfolio budget: €2.4M planned, €1.712M spent (71.3%). Infrastructure A: 94.8% consumed. Logistics: 93.8%. Finance System: 85.5%. HR Platform: 77.1%. Customer Portal: 67.2%. Compliance: 76.2%. Data Warehouse: 54.7%.`,
+  risk: `Critical projects: Infrastructure A (health 38/100, budget almost exhausted), Logistics Automation (health 44/100). Warning: Finance System (health 55, timeline slip 9 days), Compliance Framework (health 63). On track: Digital Transform (72), Data Warehouse (77), HR Platform (81), Customer Portal (90).`,
+  realloc: `Recommended reallocation: Move 2 engineers from Customer Portal (90 health, low risk) to Infrastructure A. Consider suspending non-critical Logistics Automation module 4. Realign Finance System sprint to focus only on IFRS compliance module for Q2 deadline.`,
+  board: `Board summary: Portfolio of 8 projects, €2.4M budget. 3 projects at risk. Infrastructure A and Logistics Automation need immediate intervention. On-track projects: Digital Transformation, HR Platform, Customer Portal, Data Warehouse. Recommend emergency PMO review for critical projects this week.`,
+};
+
+function buildAIResponse(q) {
+  const ql = q.toLowerCase();
+  let ans = '';
+
+  if (ql.includes('overrun') || ql.includes('budget')) {
+    ans = `Based on current burn rates, **2 projects will overrun budget this quarter:**\n\n• **Infrastructure A** — 94.8% consumed with Phase 3 still pending. Projected overrun: €28K–€45K unless spend is frozen immediately.\n• **Logistics Automation** — 93.8% consumed, automation module 4 not yet delivered. Estimated overrun: €18K–€31K.\n\n**COO recommendation:** Issue a spend freeze on both projects today. Request change control review within 48 hours. Consider descoping low-priority deliverables.`;
+  } else if (ql.includes('biggest risk') || ql.includes('risk')) {
+    ans = `Your biggest risk right now is **Infrastructure A** (health score: 38/100).\n\n${KB.risk}\n\n**Immediate actions:**\n• Freeze non-critical spend on Infrastructure A today\n• Escalate Finance System timeline slip to Finance Director\n• Schedule emergency PMO review for both critical projects this week`;
+  } else if (ql.includes('reallocate') || ql.includes('resource')) {
+    ans = `**Resource reallocation recommendation:**\n\n${KB.realloc}\n\nThis reallocation improves critical project coverage without adding headcount. Estimated impact: +12pts health score on Infrastructure A within 3 weeks if actioned now.`;
+  } else if (ql.includes('board') || ql.includes('coo summary') || ql.includes('summary')) {
+    ans = `**Executive Summary — AI COO Report**\n\n${KB.board}\n\n**This week's decision required:** Approve emergency budget reallocation of €50K from Customer Portal contingency to Infrastructure A. Risk of not acting: regulatory non-compliance and Q2 delivery failure.`;
+  } else if (ql.includes('cut team') || ql.includes('reduce team') || ql.includes('team size')) {
+    ans = `**Scenario: Reducing team on Infrastructure A**\n\nCurrent health: 38/100. Budget: 94.8% consumed.\n\n⚠️ Cutting team size on a critical project is high-risk:\n• Each engineer removed adds ~2–3 weeks to delivery\n• At current health score, this likely triggers full project failure\n• Estimated additional cost of delay: €15K–€25K per week\n\n**COO recommendation:** Do NOT reduce team on Infrastructure A. Instead, remove scope (module deferral) while keeping the team intact.`;
+  } else if (ql.includes('on track') || ql.includes('healthy')) {
+    ans = `**Projects currently on track:**\n\n✅ Customer Portal v2 — health 90/100, 67% budget consumed, ahead of schedule\n✅ HR Platform — health 81/100, on budget and timeline\n✅ Data Warehouse — health 77/100, only 54.7% budget used\n✅ Digital Transformation — health 72/100, progressing well\n\nThese 4 projects represent solid delivery. Consider showcasing them in Friday's board report as portfolio wins.`;
+  } else if (ql.includes('hello') || ql.includes('hi') || ql.includes('who are you')) {
+    ans = `Hello! I'm your **AI COO** — I have full visibility into your 8-project portfolio worth €2.4M.\n\nI can help you with:\n• Risk identification and mitigation\n• Budget variance analysis\n• Resource reallocation decisions\n• Board-ready executive summaries\n• What-if scenario analysis\n\nWhat decision do you need to make today?`;
+  } else {
+    ans = `Based on your portfolio data:\n\n${KB.risk}\n\n${KB.budget}\n\nFor your specific question about "${q}", I recommend reviewing the Dashboard for live health scores and the What-If Simulator to model the impact of any changes. Would you like me to run a specific scenario analysis?`;
+  }
+  return ans;
+}
+
+// ─── INIT DASHBOARD ──────────────────────────────────────
+function initDashboard() {
+  const tbody = document.getElementById('proj-tbody');
+  PROJECTS.forEach(p => {
+    const pct = Math.round(p.spent / p.budget * 100);
+    const color = p.health >= 70 ? '#1a472a' : p.health >= 50 ? '#b45309' : '#c8380a';
+    tbody.innerHTML += `
+      <tr>
+        <td style="font-weight:500">${p.name}</td>
+        <td><div class="health-bar"><div class="health-fill" style="width:${p.health}%;background:${color}"></div></div></td>
+        <td style="font-family:'DM Mono',monospace;font-size:12px">${p.health}</td>
+        <td><span class="status-badge status-${p.status}">${p.status.toUpperCase()}</span></td>
+        <td style="font-size:12px;color:${pct>90?'#c8380a':pct>75?'#b45309':'#5a5a54'}">${pct}%</td>
+      </tr>`;
+  });
+
+  const alertList = document.getElementById('alert-list');
+  ALERTS.forEach(a => {
+    alertList.innerHTML += `
+      <div class="alert-item alert-${a.type}">
+        <span class="alert-icon">${a.icon}</span>
+        <div>
+          <div class="alert-title">${a.title}</div>
+          <div class="alert-body">${a.body}</div>
+          <div class="alert-time">${a.time}</div>
+        </div>
+      </div>`;
+  });
+
+  // Burn chart
+  new Chart(document.getElementById('burnChart'), {
+    type: 'line',
+    data: {
+      labels: ['Jan','Feb','Mar','Apr','May','Jun'],
+      datasets: [
+        { label: 'Planned', data: [300,600,900,1200,1600,2000], borderColor: '#9a9a90', borderDash: [4,3], tension: 0.3, fill: false, pointRadius: 3 },
+        { label: 'Actual', data: [280,572,874,1180,1510,1712], borderColor: '#1a472a', tension: 0.3, fill: false, pointRadius: 3, backgroundColor: '#1a472a' },
+      ]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { font: { family: 'DM Sans', size: 11 }, boxWidth: 14 } } }, scales: { y: { ticks: { callback: v => '€'+v+'K', font: { size: 11 } }, grid: { color: 'rgba(0,0,0,0.05)' } }, x: { ticks: { font: { size: 11 } }, grid: { display: false } } } }
+  });
+
+  // Status pie
+  new Chart(document.getElementById('statusChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['On Track', 'At Risk', 'Critical'],
+      datasets: [{ data: [4, 2, 2], backgroundColor: ['#1a472a', '#b45309', '#c8380a'], borderWidth: 0, hoverOffset: 4 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { font: { family: 'DM Sans', size: 12 }, padding: 16, boxWidth: 12 } } }, cutout: '65%' }
+  });
+}
+
+// ─── INIT BUDGET ─────────────────────────────────────────
+function initBudget() {
+  const rows = document.getElementById('budget-rows');
+  PROJECTS.forEach(p => {
+    const pct = Math.round(p.spent / p.budget * 100);
+    const variance = p.spent - p.budget;
+    const color = pct > 90 ? '#c8380a' : pct > 75 ? '#b45309' : '#1a472a';
+    rows.innerHTML += `
+      <div class="budget-item">
+        <div class="budget-name">${p.name.length > 24 ? p.name.slice(0,22)+'…' : p.name}</div>
+        <div>
+          <div class="bar-track"><div class="bar-fill" style="width:${Math.min(pct,100)}%;background:${color}"></div></div>
+          <div style="font-size:11px;color:var(--text-3);margin-top:3px">€${p.spent}K of €${p.budget}K (${pct}%)</div>
+        </div>
+        <div class="${variance<0?'variance-neg':'variance-pos'}">${variance<0?'−€'+Math.abs(variance)+'K':'+€'+variance+'K'}</div>
+        <span class="status-badge status-${pct>90?'critical':pct>75?'warning':'ok'}">${pct>90?'OVER':pct>75?'WATCH':'OK'}</span>
+      </div>`;
+  });
+
+  new Chart(document.getElementById('catChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Personnel','Infra','Vendor','Legal','Travel','Contingency'],
+      datasets: [{ label: 'Spend €K', data: [812, 334, 289, 142, 68, 67], backgroundColor: ['#1a472a','#2d6a4f','#3a8563','#4d9e77','#1d4ed8','#9a9a90'], borderRadius: 4 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => '€'+v+'K', font: { size: 11 } }, grid: { color: 'rgba(0,0,0,0.05)' } }, x: { ticks: { font: { size: 11 } }, grid: { display: false } } } }
+  });
+
+  new Chart(document.getElementById('varChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Jan','Feb','Mar','Apr','May'],
+      datasets: [
+        { label: 'Under budget', data: [20, 28, 26, 0, 0], backgroundColor: '#1a472a', borderRadius: 3 },
+        { label: 'Over budget', data: [0, 0, 0, 22, 88], backgroundColor: '#c8380a', borderRadius: 3 },
+      ]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { font: { family: 'DM Sans', size: 11 }, boxWidth: 12 } } }, scales: { y: { ticks: { callback: v => '€'+v+'K', font: { size: 11 } }, grid: { color: 'rgba(0,0,0,0.05)' } }, x: { ticks: { font: { size: 11 } }, grid: { display: false } }, x1: { display: false } } }
+  });
+}
+
+// ─── WHAT-IF ─────────────────────────────────────────────
+const PROJ_BASES = {
+  infra: { name: 'Infrastructure A', base: 420, rate: 52 },
+  digital: { name: 'Digital Transform', base: 380, rate: 44 },
+  fin: { name: 'Finance System', base: 290, rate: 38 },
+  hr: { name: 'HR Platform', base: 210, rate: 28 },
+};
+let sensitChart = null;
+
+function updateWhatIf() {
+  const proj = PROJ_BASES[document.getElementById('wi-proj').value];
+  const team = parseInt(document.getElementById('wi-team').value);
+  const scope = parseInt(document.getElementById('wi-scope').value);
+  const time = parseInt(document.getElementById('wi-time').value);
+  const riskBudget = parseInt(document.getElementById('wi-risk').value);
+
+  document.getElementById('wi-proj-name').textContent = proj.name;
+  document.getElementById('wi-team-val').textContent = (team >= 0 ? '+' : '') + team;
+  document.getElementById('wi-scope-val').textContent = (scope >= 0 ? '+' : '') + scope + '%';
+  document.getElementById('wi-time-val').textContent = (time >= 0 ? '+' : '') + time + ' weeks';
+  document.getElementById('wi-risk-val').textContent = '€' + riskBudget + 'K';
+
+  const teamCost = team * proj.rate;
+  const scopeCost = Math.round(proj.base * scope / 100);
+  const timeCost = time * 12;
+  const totalDelta = teamCost + scopeCost + timeCost + riskBudget;
+  const riskDelta = -Math.max(0, Math.round(riskBudget * 1.8 - scope * 0.4));
+
+  const el = document.getElementById('wi-cost-delta');
+  el.textContent = (totalDelta === 0 ? 'No change' : (totalDelta > 0 ? '+€' : '−€') + Math.abs(totalDelta) + 'K cost impact');
+
+  const items = document.getElementById('wi-items');
+  items.innerHTML = '';
+  if (team !== 0) items.innerHTML += `<div class="result-item">Team change: ${team > 0 ? '+' : ''}${team} people = ${teamCost >= 0 ? '+' : ''}€${teamCost}K</div>`;
+  if (scope > 0) items.innerHTML += `<div class="result-item">Scope +${scope}% = +€${scopeCost}K & +${Math.round(scope * 0.4)} weeks risk</div>`;
+  if (time !== 0) items.innerHTML += `<div class="result-item">Timeline ${time > 0 ? 'slip' : 'compression'}: ${time > 0 ? '+' : ''}€${timeCost}K (resource cost)</div>`;
+  if (riskBudget > 0) items.innerHTML += `<div class="result-item">Risk mitigation €${riskBudget}K → estimated risk score −${Math.abs(riskDelta)}pts</div>`;
+  if (totalDelta === 0) items.innerHTML = `<div class="result-item">Adjust sliders to model different scenarios</div>`;
+
+  // Sensitivity chart
+  const labels = ['Team size', 'Scope', 'Timeline', 'Risk budget'];
+  const vals = [Math.abs(teamCost), Math.abs(scopeCost), Math.abs(timeCost), riskBudget];
+  const colors = ['#1a472a','#b45309','#c8380a','#1d4ed8'];
+
+  if (sensitChart) sensitChart.destroy();
+  sensitChart = new Chart(document.getElementById('sensitChart'), {
+    type: 'bar',
+    data: {
+      labels, datasets: [{ label: 'Cost Impact €K', data: vals, backgroundColor: colors, borderRadius: 4 }]
+    },
+    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { callback: v => '€'+v+'K', font: { size: 11 } }, grid: { color: 'rgba(0,0,0,0.05)' } }, y: { ticks: { font: { size: 11 } }, grid: { display: false } } } }
+  });
+}
+
+// ─── CHAT ────────────────────────────────────────────────
+function initChat() {
+  const sc = document.getElementById('starters');
+  STARTERS.forEach(s => {
+    sc.innerHTML += `<button class="starter-btn" onclick="askStarter(this)">${s}</button>`;
+  });
+  addMsg('bot', `Hello! I'm your **AI COO**. I have visibility into your full €2.4M portfolio across 8 projects.\n\nAsk me about risks, budget, resource decisions, or request a board-ready summary. What do you need today?`);
+}
+
+function askStarter(btn) {
+  document.getElementById('chat-input').value = btn.textContent;
+  sendChat();
+}
+
+function addMsg(type, text) {
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = `msg ${type}`;
+  const rendered = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+  div.innerHTML = `<div class="msg-sender">${type === 'user' ? 'You' : '🤖 AI COO'}</div><div class="msg-bubble">${rendered}</div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function addTyping() {
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg bot'; div.id = 'typing-indicator';
+  div.innerHTML = `<div class="msg-sender">🤖 AI COO</div><div class="msg-bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function removeTyping() {
+  const t = document.getElementById('typing-indicator');
+  if (t) t.remove();
+}
+
+function sendChat() {
+  const inp = document.getElementById('chat-input');
+  const q = inp.value.trim();
+  if (!q) return;
+  inp.value = '';
+  addMsg('user', q);
+  addTyping();
+  setTimeout(() => {
+    removeTyping();
+    addMsg('bot', buildAIResponse(q));
+  }, 900 + Math.random() * 600);
+}
+
+// ─── TAB SWITCHING ───────────────────────────────────────
+const initialized = {};
+function showTab(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.tab').forEach(t => { if (t.textContent.toLowerCase().includes(id.slice(0,4))) t.classList.add('active'); });
+  if (!initialized[id]) {
+    initialized[id] = true;
+    if (id === 'budget') initBudget();
+    if (id === 'whatif') { updateWhatIf(); }
+    if (id === 'chat') initChat();
+  }
+}
+
+// ─── BOOT ────────────────────────────────────────────────
+initialized['dashboard'] = true;
+initDashboard();
+</script>
+</body>
+</html>
