@@ -3,7 +3,7 @@
 > **A real-time AI-powered COO dashboard for project portfolio management.**  
 > Built by [Marya Noor](https://www.linkedin.com/in/marya-noor-40093a182/) · Berlin, Germany
 
-🔴 **[Live Demo →](https://maryanoor66-jpg.github.io/AI-COO-Business-Engine/)**
+🔴 **[Live Demo →] https://maryanoor66-jpg.github.io/AI-Business-Engine/ **
 
 ---
 
@@ -22,7 +22,7 @@ Most organizations run 5–20 projects simultaneously with no real-time intellig
 
 ## Live Demo
 
-**[→ Try AI COO Live](https://maryanoor66-jpg.github.io/AI-COO-Business-Engine/)**
+**[→ Try AI COO Live](https://maryanoor66-jpg.github.io/AI-Business-Engine/)**
 
 No login. No API key. Opens instantly in any browser.
 
